@@ -1,0 +1,13 @@
+[workspace]
+members = [
+    "sysguard",
+    "sysguard-common",
+    "sysguard-ebpf",
+    "xtask",
+]
+default-members = [
+    "sysguard",
+    "sysguard-common",
+    "xtask",
+]
+resolver = "2"

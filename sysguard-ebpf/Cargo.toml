@@ -1,0 +1,8 @@
+[package]
+name = "sysguard-ebpf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aya-ebpf = "0.1.1"
+sysguard-common = { path = "../sysguard-common" }

@@ -1,0 +1,44 @@
+version: 1
+default_action: log
+
+ignore:
+  comm:
+    - "systemd*"
+    - "vmtoolsd"
+    - "gnome-shell"
+    - "gnome-terminal-*"
+    - "Xwayland"
+    - "xdg-desktop-por*"
+    - "gsd-*"
+  filename:
+    - "/proc/*"
+    - "/sys/*"
+    - "/run/*"
+    - "/usr/share/icons/*"
+  ports:
+    - 53
+  addr:
+    - "127.*"
+
+rules:
+  - name: alert_shell_execs
+    event: execve
+    action: alert
+    match:
+      comm: "bash*"
+  - name: watch_sensitive_file_reads
+    event: openat
+    action: alert
+    match:
+      filename: "/etc/*"
+  - name: watch_https_connections
+    event: connect
+    action: alert
+    match:
+      port: 443
+  - name: block_metadata_service
+    event: connect
+    action: block
+    match:
+      addr: "169.254.169.254"
+      port: 80
