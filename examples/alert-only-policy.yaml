@@ -1,0 +1,35 @@
+version: 1
+default_action: log
+
+ignore:
+  comm:
+    - "systemd*"
+    - "vmtoolsd"
+    - "gnome-shell"
+  filename:
+    - "/proc/*"
+    - "/sys/*"
+    - "/run/*"
+  ports:
+    - 53
+  addr:
+    - "127.*"
+
+rules:
+  - name: alert_shell_execs
+    event: execve
+    action: alert
+    match:
+      comm: "bash*"
+
+  - name: alert_sensitive_reads
+    event: openat
+    action: alert
+    match:
+      filename: "/etc/*"
+
+  - name: alert_https
+    event: connect
+    action: alert
+    match:
+      port: 443

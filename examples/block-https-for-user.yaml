@@ -1,0 +1,24 @@
+version: 1
+default_action: log
+
+ignore:
+  comm:
+    - "systemd*"
+    - "vmtoolsd"
+    - "gnome-shell"
+  filename:
+    - "/proc/*"
+    - "/sys/*"
+    - "/run/*"
+  ports:
+    - 53
+  addr:
+    - "127.*"
+
+rules:
+  - name: block_https_for_uid_1000
+    event: connect
+    action: block
+    match:
+      uid: 1000
+      port: 443

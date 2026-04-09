@@ -15,6 +15,11 @@ It is designed to stay honest about current scope:
 - Suppress noisy system events, deduplicate repeated output, and emit JSON when needed.
 - Enforce outbound IPv4 `connect` block rules through a cgroup `connect4` hook.
 
+## Example Policies
+- [`policy.yaml`](./policy.yaml): default sample policy used by the helper scripts
+- [`examples/alert-only-policy.yaml`](./examples/alert-only-policy.yaml): monitor and alert without kernel blocking
+- [`examples/block-https-for-user.yaml`](./examples/block-https-for-user.yaml): minimal example of outbound HTTPS blocking for uid `1000`
+
 ## Quick Start
 On a Linux VM:
 ```bash
