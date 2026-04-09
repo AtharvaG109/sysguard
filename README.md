@@ -2,6 +2,8 @@
 
 `sysguard` is a Rust + eBPF prototype for monitoring Linux process, file, and network activity, with a first enforcement path for outbound IPv4 connects.
 
+Status: public prototype, Linux-first, tested in Ubuntu VM workflows.
+
 It is designed to stay honest about current scope:
 - Linux is the primary supported platform.
 - macOS support is a fallback process-polling mode for development only.
@@ -12,6 +14,14 @@ It is designed to stay honest about current scope:
 - Apply YAML policy rules to classify activity as `ALLOW`, `LOG`, `ALERT`, or `BLOCK`.
 - Suppress noisy system events, deduplicate repeated output, and emit JSON when needed.
 - Enforce outbound IPv4 `connect` block rules through a cgroup `connect4` hook.
+
+## Quick Start
+On a Linux VM:
+```bash
+./scripts/linux-vm-setup.sh
+./scripts/build-release.sh
+sudo ./scripts/run.sh --uid 1000
+```
 
 ## Current Limits
 - `execve` and `openat` are monitored and classified, but not blocked in-kernel.
