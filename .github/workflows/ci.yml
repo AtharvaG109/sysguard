@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run userspace tests
+        run: cargo test -p sysguard --bin sysguard
+
+      - name: Check shell scripts
+        run: |
+          bash -n scripts/build-release.sh
+          bash -n scripts/linux-vm-setup.sh
+          bash -n scripts/linux-smoke-test.sh
+          bash -n scripts/linux-enforce-test.sh
+          bash -n scripts/run.sh
