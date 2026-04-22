@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 #[cfg(target_os = "linux")]
 use aya::maps::RingBuf;
 #[cfg(target_os = "linux")]
-use aya::{include_bytes_aligned, programs::TracePoint, Bpf};
+use aya::{programs::TracePoint, Bpf};
 use clap::{Parser, ValueEnum};
 #[cfg(target_os = "linux")]
 use dedup::{DedupSummary, Deduper};
@@ -88,8 +88,8 @@ async fn main() -> Result<()> {
 
 #[cfg(target_os = "linux")]
 async fn run(policy: &PolicyFile, opt: &Opt) -> Result<()> {
-    let bpf_data = include_bytes_aligned!("../../target/bpf/sysguard-ebpf");
-    let mut bpf = Bpf::load(bpf_data)?;
+    let bpf_data = load_bpf_object()?;
+    let mut bpf = Bpf::load(&bpf_data)?;
     let connect_block_plan = policy.connect_block_plan();
 
     attach_tracepoint(&mut bpf, "sys_enter_execve", "syscalls", "sys_enter_execve")?;
@@ -196,6 +196,20 @@ async fn run(policy: &PolicyFile, opt: &Opt) -> Result<()> {
     );
 
     Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn load_bpf_object() -> Result<Vec<u8>> {
+    let object_path = PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../target/bpf/sysguard-ebpf"
+    ));
+    fs::read(&object_path).with_context(|| {
+        format!(
+            "failed to read eBPF object at {}. Build it first with `cargo xtask build-ebpf --release` or `./scripts/build-release.sh`",
+            object_path.display()
+        )
+    })
 }
 
 #[cfg(target_os = "macos")]
