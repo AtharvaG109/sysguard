@@ -55,6 +55,13 @@ Use the helper script from the workspace root:
 ./scripts/build-release.sh
 ```
 
+Local shortcuts:
+
+```bash
+make ci
+./scripts/check.sh
+```
+
 ## Running
 Linux eBPF mode must run on a Linux host with modern kernel BTF support:
 ```bash
@@ -100,6 +107,11 @@ macOS fallback mode runs without eBPF and polls `ps` for new process launches:
 ```bash
 ./scripts/run.sh
 ```
+
+Additional docs:
+
+- [`docs/linux-prereqs.md`](./docs/linux-prereqs.md)
+- [`docs/macos-fallback.md`](./docs/macos-fallback.md)
 
 ## Manual Build Steps
 If you prefer running the commands yourself:

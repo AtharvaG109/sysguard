@@ -218,4 +218,49 @@ mod tests {
         assert_eq!(summaries.len(), 1);
         assert_eq!(summaries[0].suppressed_count, 1);
     }
+
+    #[test]
+    fn force_flush_emits_summary_and_clears_state() {
+        let mut deduper = Deduper::new(Duration::from_secs(10), Duration::from_secs(60));
+        let event = sample_event();
+        let decision = PolicyDecision {
+            action: RuleAction::Block,
+            rule_name: Some("block_https"),
+        };
+
+        assert!(deduper.observe(&event, &decision));
+        assert!(!deduper.observe(&event, &decision));
+
+        let summaries = deduper.flush_ready(true);
+        assert_eq!(summaries.len(), 1);
+        assert_eq!(summaries[0].suppressed_count, 1);
+        assert!(deduper.flush_ready(false).is_empty());
+    }
+
+    #[test]
+    fn summary_line_includes_network_context() {
+        let summary = DedupSummary {
+            action: RuleAction::Alert,
+            rule_name: Some("watch_https_connections".to_string()),
+            event: DedupEvent {
+                kind: PolicyEventKind::Connect,
+                uid: 1000,
+                pid: 42,
+                comm: "curl".to_string(),
+                filename: None,
+                daddr: Some(Ipv4Addr::new(1, 1, 1, 1)),
+                dport: Some(443),
+            },
+            uid: 1000,
+            pid: 42,
+            ppid: Some(1),
+            exe_path: Some("/usr/bin/curl".to_string()),
+            suppressed_count: 3,
+        };
+
+        let line = summary.summary_line();
+        assert!(line.contains("event=connect"));
+        assert!(line.contains("port=443"));
+        assert!(line.contains("exe=/usr/bin/curl"));
+    }
 }

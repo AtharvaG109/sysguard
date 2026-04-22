@@ -486,4 +486,24 @@ mod tests {
         assert_eq!(plan.enforceable[0].name, "block_https");
         assert_eq!(plan.skipped.len(), 1);
     }
+
+    #[test]
+    fn policy_uses_default_action_when_no_rule_matches() {
+        let policy = PolicyFile {
+            version: 1,
+            default_action: RuleAction::Alert,
+            rules: vec![],
+            ignore: IgnoreConfig::default(),
+        };
+
+        let decision = policy.evaluate(&sample_event());
+        assert_eq!(decision.action, RuleAction::Alert);
+        assert!(decision.rule_name.is_none());
+    }
+
+    #[test]
+    fn parse_exact_ipv4_rejects_globs() {
+        assert_eq!(parse_exact_ipv4("1.1.1.1"), Some(Ipv4Addr::new(1, 1, 1, 1)));
+        assert!(parse_exact_ipv4("1.1.*").is_none());
+    }
 }
