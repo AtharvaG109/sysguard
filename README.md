@@ -59,8 +59,13 @@ Local shortcuts:
 
 ```bash
 make ci
+make doctor
 ./scripts/check.sh
 ```
+
+Use `make doctor` when setting up a fresh machine or VM. It checks for the
+Rust, LLVM, and Linux eBPF tools needed before you spend time debugging a
+missing local dependency.
 
 ## Running
 Linux eBPF mode must run on a Linux host with modern kernel BTF support:
