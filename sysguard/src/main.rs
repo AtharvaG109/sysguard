@@ -70,6 +70,10 @@ struct Opt {
     /// Cgroup path used for connect enforcement.
     #[arg(long, default_value = "/sys/fs/cgroup")]
     cgroup_path: PathBuf,
+
+    /// Print a policy summary and exit without attaching monitors.
+    #[arg(long)]
+    policy_summary: bool,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -83,6 +87,10 @@ async fn main() -> Result<()> {
     env_logger::init();
     let opt = Opt::parse();
     let policy = PolicyFile::load(&opt.policy)?;
+    if opt.policy_summary {
+        println!("{}", policy.summary_line());
+        return Ok(());
+    }
     run(&policy, &opt).await
 }
 

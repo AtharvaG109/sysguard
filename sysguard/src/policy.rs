@@ -93,6 +93,19 @@ impl PolicyFile {
         self.ignore.matches(event)
     }
 
+    pub fn summary_line(&self) -> String {
+        let enforceable = self.connect_block_plan().enforceable.len();
+        format!(
+            "version={} default_action={} rules={} ignored_uids={} ignored_processes={} enforceable_connect_blocks={}",
+            self.version,
+            self.default_action,
+            self.rules.len(),
+            self.ignore.uids.len(),
+            self.ignore.comm.len(),
+            enforceable
+        )
+    }
+
     pub fn connect_block_plan(&self) -> ConnectBlockPlan {
         let mut enforceable = Vec::new();
         let mut skipped = Vec::new();
@@ -499,6 +512,34 @@ mod tests {
         let decision = policy.evaluate(&sample_event());
         assert_eq!(decision.action, RuleAction::Alert);
         assert!(decision.rule_name.is_none());
+    }
+
+    #[test]
+    fn policy_summary_line_includes_counts() {
+        let policy = PolicyFile {
+            version: 1,
+            default_action: RuleAction::Log,
+            ignore: IgnoreConfig {
+                uids: vec![0],
+                comm: vec!["launchd".to_string()],
+                ..IgnoreConfig::default()
+            },
+            rules: vec![PolicyRule {
+                name: "block_dns".to_string(),
+                event: PolicyEventKind::Connect,
+                action: RuleAction::Block,
+                matcher: PolicyMatch {
+                    port: Some(53),
+                    ..PolicyMatch::default()
+                },
+            }],
+        };
+
+        let summary = policy.summary_line();
+        assert!(summary.contains("version=1"));
+        assert!(summary.contains("rules=1"));
+        assert!(summary.contains("ignored_uids=1"));
+        assert!(summary.contains("enforceable_connect_blocks=1"));
     }
 
     #[test]
