@@ -162,7 +162,10 @@ impl PolicyFile {
             });
         }
 
-        ConnectBlockPlan { enforceable, skipped }
+        ConnectBlockPlan {
+            enforceable,
+            skipped,
+        }
     }
 }
 
@@ -298,7 +301,7 @@ impl PolicyMatch {
             let Some(addr) = event.daddr else {
                 return false;
             };
-            if !glob_matches(pattern, &addr.to_string()) {
+            if !addr_matches(pattern, addr) {
                 return false;
             }
         }
@@ -327,7 +330,11 @@ impl IgnoreConfig {
             return true;
         }
 
-        if self.comm.iter().any(|pattern| glob_matches(pattern, &event.comm)) {
+        if self
+            .comm
+            .iter()
+            .any(|pattern| glob_matches(pattern, &event.comm))
+        {
             return true;
         }
 
@@ -342,12 +349,7 @@ impl IgnoreConfig {
         }
 
         if let Some(addr) = event.daddr {
-            let addr_string = addr.to_string();
-            if self
-                .addr
-                .iter()
-                .any(|pattern| glob_matches(pattern, &addr_string))
-            {
+            if self.addr.iter().any(|pattern| addr_matches(pattern, addr)) {
                 return true;
             }
         }
@@ -375,6 +377,32 @@ fn parse_exact_ipv4(pattern: &str) -> Option<Ipv4Addr> {
 
 pub fn glob_matches(pattern: &str, text: &str) -> bool {
     glob_matches_bytes(pattern.as_bytes(), text.as_bytes())
+}
+
+fn addr_matches(pattern: &str, addr: Ipv4Addr) -> bool {
+    if let Some((network, prefix)) = parse_ipv4_cidr(pattern) {
+        return ipv4_in_cidr(addr, network, prefix);
+    }
+
+    glob_matches(pattern, &addr.to_string())
+}
+
+fn parse_ipv4_cidr(pattern: &str) -> Option<(Ipv4Addr, u32)> {
+    let (network, prefix) = pattern.split_once('/')?;
+    let network = network.parse().ok()?;
+    let prefix = prefix.parse::<u32>().ok()?;
+    if prefix > 32 {
+        return None;
+    }
+    Some((network, prefix))
+}
+
+fn ipv4_in_cidr(addr: Ipv4Addr, network: Ipv4Addr, prefix: u32) -> bool {
+    if prefix == 0 {
+        return true;
+    }
+    let mask = u32::MAX << (32 - prefix);
+    u32::from(addr) & mask == u32::from(network) & mask
 }
 
 fn glob_matches_bytes(pattern: &[u8], text: &[u8]) -> bool {
@@ -438,12 +466,24 @@ mod tests {
     }
 
     #[test]
+    fn addr_match_supports_exact_glob_and_cidr_patterns() {
+        let addr = Ipv4Addr::new(10, 10, 20, 5);
+
+        assert!(addr_matches("10.10.20.5", addr));
+        assert!(addr_matches("10.10.*", addr));
+        assert!(addr_matches("10.10.20.0/24", addr));
+        assert!(addr_matches("0.0.0.0/0", addr));
+        assert!(!addr_matches("10.10.21.0/24", addr));
+        assert!(!addr_matches("10.11.*", addr));
+    }
+
+    #[test]
     fn ignore_config_matches_expected_fields() {
         let ignore = IgnoreConfig {
             uids: vec![0],
             comm: vec!["curl*".to_string()],
             filename: vec!["/proc/*".to_string()],
-            addr: vec!["1.1.*".to_string()],
+            addr: vec!["1.1.1.0/24".to_string()],
             ports: vec![53],
         };
 
@@ -458,6 +498,21 @@ mod tests {
             action: RuleAction::Alert,
             matcher: PolicyMatch {
                 filename: Some("/etc/*".to_string()),
+                ..PolicyMatch::default()
+            },
+        };
+
+        assert!(rule.matches(&sample_event()));
+    }
+
+    #[test]
+    fn policy_rule_matches_cidr_addr() {
+        let rule = PolicyRule {
+            name: "watch_cloudflare_dns".to_string(),
+            event: PolicyEventKind::Openat,
+            action: RuleAction::Alert,
+            matcher: PolicyMatch {
+                addr: Some("1.1.1.0/24".to_string()),
                 ..PolicyMatch::default()
             },
         };

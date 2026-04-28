@@ -139,7 +139,7 @@ Make sure `target/`, temporary test policies, and machine-specific files are not
 ## Notes
 - `cargo build --release` builds the userspace app by default from the workspace root.
 - The sample [`policy.yaml`](./policy.yaml) includes example rules for `execve`, `openat`, and `connect`.
-- The sample policy also includes a configurable `ignore:` section for noisy processes, paths, ports, and addresses.
+- The sample policy also includes a configurable `ignore:` section for noisy processes, paths, ports, and addresses. Address matches support exact IPv4, glob patterns such as `10.0.*`, and CIDR ranges such as `10.0.0.0/8` for userspace matching.
 - The project is pinned to currently published Aya crate versions so `cargo` can resolve dependencies on a fresh Linux VM.
 - On macOS, Sysguard uses a userspace process-polling backend instead of Linux eBPF tracepoints.
 - Linux `action: block` rules are classified in userspace, and `connect` rules with exact IPv4 addr and/or port matches can also be enforced at kernel level with `--enforce-connect`.
